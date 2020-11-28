@@ -41,11 +41,7 @@ pub fn crack_lcg(values: &[isize]) -> Option<LCG> {
     let diffs = izip!(values, values.iter().skip(1))
         .map(|(a, b)| b - a)
         .collect::<Vec<isize>>();
-    let zeroes = izip!(
-        &diffs,
-        (&diffs).iter().skip(1),
-        (&diffs).iter().skip(2)
-    )
+    let zeroes = izip!(&diffs, (&diffs).iter().skip(1), (&diffs).iter().skip(2))
         .map(|(a, b, c)| c * a - b * b)
         .collect::<Vec<_>>();
     let modulus = zeroes
@@ -56,9 +52,9 @@ pub fn crack_lcg(values: &[isize]) -> Option<LCG> {
     let multiplier = modulo(
         &((values[2] - values[1]).to_bigint()?
             * modinv(
-            &(&values[1].to_bigint()? - &values[0].to_bigint()?),
-            &modulus,
-        )?),
+                &(&values[1].to_bigint()? - &values[0].to_bigint()?),
+                &modulus,
+            )?),
         &modulus,
     );
 
@@ -93,7 +89,10 @@ impl LCG {
     /// modinv(a,m) * (state - c) % m
     /// relies on modinv(a,m) existing (aka a and m must be coprime) and will return None otherwise
     pub fn prev(&mut self) -> Option<BigInt> {
-        self.state = modulo(&(modinv(&self.a, &self.m)? * (&self.state - (&self.c))), &self.m);
+        self.state = modulo(
+            &(modinv(&self.a, &self.m)? * (&self.state - (&self.c))),
+            &self.m,
+        );
         Some(self.state.clone())
     }
 }
@@ -112,7 +111,6 @@ mod tests {
             c: 76581.to_bigint().unwrap(),
             m: 479001599.to_bigint().unwrap(),
         };
-
 
         let mut forward = (&mut rand).take(10).collect::<Vec<_>>();
 
@@ -149,11 +147,12 @@ mod tests {
         };
 
         let cracked_lcg = crack_lcg(
-            &(&mut rand).take(10)
+            &(&mut rand)
+                .take(10)
                 .map(|x| x.to_isize().unwrap())
                 .collect::<Vec<_>>(),
         )
-            .unwrap();
+        .unwrap();
         assert_eq!(rand, cracked_lcg);
     }
 }
