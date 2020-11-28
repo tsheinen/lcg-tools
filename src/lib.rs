@@ -1,3 +1,19 @@
+//! I'm putting all the neat LCG utilities I use in this library so i can stop copy/pasting python functions from old writeups every time i have to break an lcg for a CTF.
+//!
+//! Currently it can solve an LCG forward and backwards and derive parameters when provided a collection of values
+
+#![forbid(unsafe_code)]
+#![deny(
+missing_debug_implementations,
+missing_docs,
+trivial_casts,
+trivial_numeric_casts,
+unused_extern_crates,
+unused_import_braces,
+unused_qualifications,
+warnings
+)]
+
 use itertools::izip;
 use num::Integer;
 use num_bigint::{BigInt, ToBigInt};
@@ -16,20 +32,24 @@ fn modinv(a: &BigInt, m: &BigInt) -> Option<BigInt> {
     }
 }
 
+/// Represents a linear congruential generator which can calculate both forwards and backwards
 #[derive(Debug, Eq, PartialEq)]
 pub struct LCG {
+    /// Seed
     pub state: BigInt,
-    // Seed
+    /// Multiplier
     pub a: BigInt,
-    // Multiplier
+    /// Increment
     pub c: BigInt,
-    // Increment
-    pub m: BigInt, // Modulus
+    /// Modulus
+    pub m: BigInt,
 }
 
 /// Tries to derive LCG parameters based on known values
+///
 /// This is probabilistic and may be wrong, especially for low number of values
-/// https://tailcall.net/blog/cracking-randomness-lcgs/
+///
+/// [https://tailcall.net/blog/cracking-randomness-lcgs/](https://tailcall.net/blog/cracking-randomness-lcgs/)
 pub fn crack_lcg(values: &[isize]) -> Option<LCG> {
     // not sure how this can be made generic across integral types
     // main hangup is the primitive 0isize in the fold for the modulus
@@ -70,8 +90,6 @@ pub fn crack_lcg(values: &[isize]) -> Option<LCG> {
 impl Iterator for LCG {
     type Item = BigInt;
 
-    /// Calculate the next value of the LCG
-    /// state * a + c % m
     fn next(&mut self) -> Option<BigInt> {
         Some(self.rand())
     }
@@ -79,14 +97,17 @@ impl Iterator for LCG {
 
 impl LCG {
     /// Calculate the next value of the LCG
-    /// state * a + c % m
-    fn rand(&mut self) -> BigInt {
+    ///
+    /// `state * a + c % m`
+    pub fn rand(&mut self) -> BigInt {
         self.state = modulo(&(&self.state * (&self.a) + (&self.c)), &self.m);
         self.state.clone()
     }
 
     /// Calculate the previous value of the LCG
-    /// modinv(a,m) * (state - c) % m
+    ///
+    /// `modinv(a,m) * (state - c) % m`
+    ///
     /// relies on modinv(a,m) existing (aka a and m must be coprime) and will return None otherwise
     pub fn prev(&mut self) -> Option<BigInt> {
         self.state = modulo(

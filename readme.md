@@ -7,6 +7,12 @@ Currently it can solve an LCG forward and backwards and derive parameters when p
 
 
 ```rust
+#[cfg(test)]
+mod tests {
+    use crate::{crack_lcg, LCG};
+    use num::ToPrimitive;
+    use num_bigint::ToBigInt;
+
     #[test]
     fn it_generates_numbers_correctly_forward_and_backwards() {
         let mut rand = LCG {
@@ -16,7 +22,7 @@ Currently it can solve an LCG forward and backwards and derive parameters when p
             m: 479001599.to_bigint().unwrap(),
         };
 
-        let mut forward = (0..10).map(|_| rand.next()).collect::<Vec<_>>();
+        let mut forward = (&mut rand).take(10).collect::<Vec<_>>();
 
         assert_eq!(
             forward,
@@ -34,7 +40,7 @@ Currently it can solve an LCG forward and backwards and derive parameters when p
             ]
         );
         forward.reverse();
-        rand.next();
+        rand.rand();
         assert_eq!(
             (0..10).filter_map(|_| rand.prev()).collect::<Vec<_>>(),
             forward
@@ -51,12 +57,13 @@ Currently it can solve an LCG forward and backwards and derive parameters when p
         };
 
         let cracked_lcg = crack_lcg(
-            (0..10)
-                .map(|_| rand.next().to_isize().unwrap())
+            &(&mut rand)
+                .take(10)
+                .map(|x| x.to_isize().unwrap())
                 .collect::<Vec<_>>(),
         )
         .unwrap();
         assert_eq!(rand, cracked_lcg);
-
     }
+}
 ```
