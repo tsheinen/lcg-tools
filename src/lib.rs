@@ -38,13 +38,13 @@ pub fn crack_lcg(values: &[isize]) -> Option<LCG> {
     if values.len() < 3 {
         return None;
     }
-    let diffs = izip!(values.clone(), values.clone().into_iter().skip(1))
+    let diffs = izip!(values, values.iter().skip(1))
         .map(|(a, b)| b - a)
-        .collect::<Vec<_>>();
+        .collect::<Vec<isize>>();
     let zeroes = izip!(
-        diffs.clone(),
-        diffs.clone().into_iter().skip(1),
-        diffs.clone().into_iter().skip(2)
+        &diffs,
+        (&diffs).iter().skip(1),
+        (&diffs).iter().skip(2)
     )
         .map(|(a, b, c)| c * a - b * b)
         .collect::<Vec<_>>();
@@ -71,10 +71,20 @@ pub fn crack_lcg(values: &[isize]) -> Option<LCG> {
     })
 }
 
+impl Iterator for LCG {
+    type Item = BigInt;
+
+    /// Calculate the next value of the LCG
+    /// state * a + c % m
+    fn next(&mut self) -> Option<BigInt> {
+        Some(self.rand())
+    }
+}
+
 impl LCG {
     /// Calculate the next value of the LCG
     /// state * a + c % m
-    pub fn next(&mut self) -> BigInt {
+    fn rand(&mut self) -> BigInt {
         self.state = modulo(&(&self.state * (&self.a) + (&self.c)), &self.m);
         self.state.clone()
     }
@@ -103,7 +113,8 @@ mod tests {
             m: 479001599.to_bigint().unwrap(),
         };
 
-        let mut forward = (0..10).map(|_| rand.next()).collect::<Vec<_>>();
+
+        let mut forward = (&mut rand).take(10).collect::<Vec<_>>();
 
         assert_eq!(
             forward,
@@ -121,7 +132,7 @@ mod tests {
             ]
         );
         forward.reverse();
-        rand.next();
+        rand.rand();
         assert_eq!(
             (0..10).filter_map(|_| rand.prev()).collect::<Vec<_>>(),
             forward
@@ -138,8 +149,8 @@ mod tests {
         };
 
         let cracked_lcg = crack_lcg(
-            &(0..10)
-                .map(|_| rand.next().to_isize().unwrap())
+            &(&mut rand).take(10)
+                .map(|x| x.to_isize().unwrap())
                 .collect::<Vec<_>>(),
         )
             .unwrap();
