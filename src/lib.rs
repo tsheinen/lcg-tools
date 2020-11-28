@@ -30,7 +30,11 @@ pub struct LCG {
 /// Tries to derive LCG parameters based on known values
 /// This is probabilistic and may be wrong, especially for low number of values
 /// https://tailcall.net/blog/cracking-randomness-lcgs/
-pub fn crack_lcg(values: Vec<isize>) -> Option<LCG> {
+pub fn crack_lcg(values: &[isize]) -> Option<LCG> {
+    // not sure how this can be made generic across integral types
+    // main hangup is the primitive 0isize in the fold for the modulus
+    // because can't add isize and impl Integer + ops::Add
+    // searched around and didn't find anything so you need to pass variables in as isize until i can fix that
     if values.len() < 3 {
         return None;
     }
@@ -42,8 +46,8 @@ pub fn crack_lcg(values: Vec<isize>) -> Option<LCG> {
         diffs.clone().into_iter().skip(1),
         diffs.clone().into_iter().skip(2)
     )
-    .map(|(a, b, c)| c * a - b * b)
-    .collect::<Vec<_>>();
+        .map(|(a, b, c)| c * a - b * b)
+        .collect::<Vec<_>>();
     let modulus = zeroes
         .iter()
         .fold(0isize, |sum, val| sum.gcd(val))
@@ -52,9 +56,9 @@ pub fn crack_lcg(values: Vec<isize>) -> Option<LCG> {
     let multiplier = modulo(
         &((values[2] - values[1]).to_bigint()?
             * modinv(
-                &(&values[1].to_bigint()? - &values[0].to_bigint()?),
-                &modulus,
-            )?),
+            &(&values[1].to_bigint()? - &values[0].to_bigint()?),
+            &modulus,
+        )?),
         &modulus,
     );
 
@@ -68,11 +72,16 @@ pub fn crack_lcg(values: Vec<isize>) -> Option<LCG> {
 }
 
 impl LCG {
+    /// Calculate the next value of the LCG
+    /// state * a + c % m
     pub fn next(&mut self) -> BigInt {
-        self.state =  modulo(&(&self.state * (&self.a) + (&self.c)), &self.m);
+        self.state = modulo(&(&self.state * (&self.a) + (&self.c)), &self.m);
         self.state.clone()
     }
 
+    /// Calculate the previous value of the LCG
+    /// modinv(a,m) * (state - c) % m
+    /// relies on modinv(a,m) existing (aka a and m must be coprime) and will return None otherwise
     pub fn prev(&mut self) -> Option<BigInt> {
         self.state = modulo(&(modinv(&self.a, &self.m)? * (&self.state - (&self.c))), &self.m);
         Some(self.state.clone())
@@ -129,12 +138,11 @@ mod tests {
         };
 
         let cracked_lcg = crack_lcg(
-            (0..10)
+            &(0..10)
                 .map(|_| rand.next().to_isize().unwrap())
                 .collect::<Vec<_>>(),
         )
-        .unwrap();
+            .unwrap();
         assert_eq!(rand, cracked_lcg);
-
     }
 }
