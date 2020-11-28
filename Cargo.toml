@@ -1,7 +1,7 @@
 [package]
 name = "lcg-tools"
 description = "Utilities for solving LCG CTF problems"
-version = "0.1.0"
+version = "0.1.1-alpha.0"
 authors = ["Teddy Heinen <teddy@heinen.dev>"]
 edition = "2018"
 license = "MIT"
