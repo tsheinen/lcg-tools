@@ -1,9 +1,13 @@
 [package]
 name = "lcg-tools"
+description = "Utilities for solving LCG CTF problems"
 version = "0.1.0"
 authors = ["Teddy Heinen <teddy@heinen.dev>"]
 edition = "2018"
-
+license = "MIT"
+homepage = "https://github.com/tcheinen/lcg-tools"
+repository = "https://github.com/tcheinen/lcg-tools"
+readme = "readme.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
